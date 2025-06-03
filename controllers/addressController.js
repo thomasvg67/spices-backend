@@ -70,38 +70,45 @@ exports.updateAddress = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-    try {
-        const userId = req.user.userId; 
-        const { fullName, email, phone, currentPassword, newPassword } = req.body;
+  try {
+    const userId = req.user.userId;
+    const { fullName, email, phone, currentPassword, newPassword } = req.body;
 
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Update name, email, and phone
-        if (fullName) user.fullName = fullName;
-        if (email) user.email = email;
-        if (phone) user.phone = phone;
+    // Update basic fields
+    if (fullName) user.fullName = fullName;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
 
-        // If password change is requested
-        if (currentPassword && newPassword) {
-            const isMatch = await bcrypt.compare(currentPassword, user.password);
-            if (!isMatch) return res.status(400).json({ message: "Current password is incorrect" });
-
-            const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(newPassword, salt);
-        }
-
-        await user.save();
-        res.status(200).json({
-            message: "Profile updated successfully",
-            user: {
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone,
-            },
-        });
-    } catch (error) {
-        console.error("Update profile error:", error);
-        res.status(500).json({ message: "Server error" });
+    // Handle profile picture upload
+    if (req.file) {
+      user.profilePicture = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     }
+
+    // Handle password update
+    if (currentPassword && newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(400).json({ message: "Current password is incorrect" });
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };

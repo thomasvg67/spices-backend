@@ -8,7 +8,8 @@ const productSchema = new mongoose.Schema({
   gst: Number,
   status: String,
   availability: String,
-  images: [String], 
-});
+  bestSeller: Boolean,
+  images: [String],
+}, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

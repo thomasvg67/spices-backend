@@ -21,9 +21,18 @@ exports.addProduct = async (req, res) => {
       gst,
       status,
       availability,
+      bestSeller,
     } = req.body;
 
-     const images = req.files.map(file => file.filename);
+    const images = req.files.map(file => file.filename);
+
+    // Check if bestSeller is true and the limit is reached
+    if (bestSeller === 'true') {
+      const bestSellerCount = await Product.countDocuments({ bestSeller: true });
+      if (bestSellerCount >= 8) {
+        return res.status(400).json({ error: 'Best seller is full' });
+      }
+    }
 
     const product = new Product({
       name,
@@ -34,6 +43,7 @@ exports.addProduct = async (req, res) => {
       gst,
       status,
       availability,
+      bestSeller: bestSeller === 'true', // ensure boolean
     });
 
     await product.save();
@@ -56,15 +66,23 @@ exports.updateProduct = async (req, res) => {
       gst,
       status,
       availability,
+      bestSeller,
     } = req.body;
 
-    // Find the product first
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Update text fields
+    // If setting bestSeller to true and it's not already true
+    if (bestSeller === 'true' && product.bestSeller !== true) {
+      const bestSellerCount = await Product.countDocuments({ bestSeller: true });
+      if (bestSellerCount >= 8) {
+        return res.status(400).json({ error: "Best seller is full" });
+      }
+    }
+
+    // Update fields
     product.name = name || product.name;
     product.price = price || product.price;
     product.description = description || product.description;
@@ -72,24 +90,23 @@ exports.updateProduct = async (req, res) => {
     product.gst = gst || product.gst;
     product.status = status || product.status;
     product.availability = availability || product.availability;
+    product.bestSeller = bestSeller === 'true'; // ensure boolean
 
-    // If new images are uploaded, replace old images with new ones
+    // Replace images if new ones are uploaded
     if (req.files && req.files.length > 0) {
       const newImages = req.files.map(file => file.filename);
       product.images = newImages;
     }
 
     await product.save();
-
-    res.json(product);
-  } catch (err) {
-    console.error("Update product error:", err);
-    res.status(500).json({ error: "Failed to update product" });
+    res.status(200).json(product);
+  } catch (error) {
+    console.error("Update failed:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-
-// controllers/productController.js
+// Delete product
 exports.deleteProduct = async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);

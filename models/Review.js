@@ -6,7 +6,8 @@ const reviewSchema = new mongoose.Schema({
   email: { type: String },
   review: { type: String, required: true },
   rating: { type: Number, min: 1, max: 5, required: true },
-  isVisible: { type: Boolean, default: false },  // NEW FIELD
+  photo: { type: String },
+  isVisible: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

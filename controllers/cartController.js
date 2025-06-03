@@ -24,8 +24,21 @@ exports.addToCart = async (req, res) => {
 exports.getCartItems = async (req, res) => {
   try {
     const userId = req.user.userId || req.user.id;
+
+    // Step 1: Get all cart items
     const cartItems = await Cart.find({ userId }).populate('productId');
-    res.status(200).json(cartItems);
+
+    // Step 2: Filter out items with missing or deleted products
+    const validItems = cartItems.filter(item => item.productId !== null);
+
+    // Step 3: Delete invalid items from DB
+    const invalidItems = cartItems.filter(item => item.productId === null);
+    const invalidIds = invalidItems.map(item => item._id);
+    if (invalidIds.length > 0) {
+      await Cart.deleteMany({ _id: { $in: invalidIds } });
+    }
+
+    res.status(200).json(validItems);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

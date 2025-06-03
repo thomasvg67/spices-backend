@@ -31,9 +31,22 @@ exports.getWishlistCount = async (req, res) => {
 
 exports.getWishlistItems = async (req, res) => {
   try {
-const userId = req.user.userId || req.user.id;
+    const userId = req.user.userId || req.user.id;
+
+    // Step 1: Fetch all wishlist items
     const wishlistItems = await Wishlist.find({ userId }).populate('productId');
-    res.json(wishlistItems);
+
+    // Step 2: Keep only valid items
+    const validItems = wishlistItems.filter(item => item.productId !== null);
+
+    // Step 3: Delete invalid entries
+    const invalidItems = wishlistItems.filter(item => item.productId === null);
+    const invalidIds = invalidItems.map(item => item._id);
+    if (invalidIds.length > 0) {
+      await Wishlist.deleteMany({ _id: { $in: invalidIds } });
+    }
+
+    res.status(200).json(validItems);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch wishlist items' });
   }
