@@ -13,7 +13,7 @@ exports.addReview = async (req, res) => {
 
     let photo = '';
     if (req.file) {
-      photo = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      photo = req.file.filename;
     }
 
     const newReview = new Review({
