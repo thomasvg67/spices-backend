@@ -9,5 +9,6 @@ router.get('/items', verifyToken, cartController.getCartItems);
 router.get('/count', verifyToken, cartController.getCartCount);
 router.delete('/:id',verifyToken, cartController.removeFromCart);
 router.patch('/:id/quantity',verifyToken, cartController.updateQuantity);
+router.post('/remove-multiple', verifyToken, cartController.removeMultipleFromCart);
 
 module.exports = router;

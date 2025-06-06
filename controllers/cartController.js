@@ -98,3 +98,20 @@ exports.updateQuantity = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.removeMultipleFromCart = async (req, res) => {
+  const userId = req.user.userId || req.user.id;
+  const { itemIds } = req.body;
+
+  try {
+    if (!itemIds || !Array.isArray(itemIds)) {
+      return res.status(400).json({ message: 'itemIds must be an array' });
+    }
+
+    await Cart.deleteMany({ _id: { $in: itemIds }, userId });
+    res.status(200).json({ message: 'Items removed successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to remove items', error: err.message });
+  }
+};
