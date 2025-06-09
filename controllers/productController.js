@@ -1,11 +1,31 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
 
 // Get all products
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
-    res.json(products);
+    const products = await Product.find({}).lean(); // use lean() for performance
+
+    const productIds = products.map(p => p._id);
+    const reviews = await Review.find({ productId: { $in: productIds } });
+
+    const ratingsMap = {};
+    productIds.forEach(id => {
+      const productReviews = reviews.filter(r => r.productId.toString() === id.toString());
+      const average = productReviews.length
+        ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+        : 0;
+      ratingsMap[id] = Math.round(average * 2) / 2;
+    });
+
+    const productsWithRating = products.map(p => ({
+      ...p,
+      averageRating: ratingsMap[p._id] || 0,
+    }));
+
+    res.json(productsWithRating);
   } catch (err) {
+    console.error('Failed to fetch products with ratings:', err);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 };
