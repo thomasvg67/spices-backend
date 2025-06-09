@@ -21,6 +21,7 @@ app.use('/api/cart', require('./routes/cartRoutes'))
 app.use('/api/wishlist', require('./routes/wishlistRoutes'))
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 
 
 // app.use('/api', require('./routes/auth'));
